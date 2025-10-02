@@ -1,5 +1,5 @@
 import crcmod
-from opendbc.car.nissan.values import CAR
+from opendbc.car.nissan.values import CAR, Buttons
 
 # TODO: add this checksum to the CANPacker
 nissan_checksum = crcmod.mkCrcFun(0x11d, initCrc=0x00, rev=False, xorOut=0xff)
@@ -21,7 +21,7 @@ def create_steering_control(packer, apply_torque, frame, steer_on, lkas_max_torq
   return packer.make_can_msg("LKAS", 0, values)
 
 
-def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
+def create_button_cmd(packer, car_fingerprint, cruise_throttle_msg, button = Buttons.NONE):
   values = {s: cruise_throttle_msg[s] for s in [
     "COUNTER",
     "PROPILOT_BUTTON",
@@ -41,12 +41,22 @@ def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
   ]}
   can_bus = 1 if car_fingerprint == CAR.NISSAN_ALTIMA else 2
 
-  values["CANCEL_BUTTON"] = 1
   values["NO_BUTTON_PRESSED"] = 0
   values["PROPILOT_BUTTON"] = 0
   values["SET_BUTTON"] = 0
   values["RES_BUTTON"] = 0
   values["FOLLOW_DISTANCE_BUTTON"] = 0
+
+  if button == Buttons.CANCEL:
+    values["CANCEL_BUTTON"] = 1
+  elif button == Buttons.SET:
+    values["SET_BUTTON"] = 1
+  elif button == Buttons.RESUME:
+    values["RES_BUTTON"] = 1
+  elif button == Buttons.FOLLOW_DISTANCE:
+    values["FOLLOW_DISTANCE_BUTTON"] = 1
+  elif button == Buttons.NONE:
+    values["NO_BUTTON_PRESSED"] = 1
 
   return packer.make_can_msg("CRUISE_THROTTLE", can_bus, values)
 

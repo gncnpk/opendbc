@@ -3,7 +3,7 @@ from opendbc.car import Bus, structs
 from opendbc.car.lateral import apply_std_steer_angle_limits
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.nissan import nissancan
-from opendbc.car.nissan.values import CAR, CarControllerParams
+from opendbc.car.nissan.values import CAR, CarControllerParams, Buttons
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
@@ -46,7 +46,7 @@ class CarController(CarControllerBase):
         )
 
     if self.CP.carFingerprint in (CAR.NISSAN_ROGUE, CAR.NISSAN_XTRAIL, CAR.NISSAN_ALTIMA) and pcm_cancel_cmd:
-      can_sends.append(nissancan.create_acc_cancel_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg))
+      can_sends.append(nissancan.create_button_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, Buttons.CANCEL))
 
     # TODO: Find better way to cancel!
     # For some reason spamming the cancel button is unreliable on the Leaf

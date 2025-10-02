@@ -77,6 +77,14 @@ class CAR(Platforms):
   )
 
 
+class Buttons:
+  NONE = 0
+  RESUME = 1
+  CANCEL = 2
+  SET = 3
+  FOLLOW_DISTANCE = 4
+
+
 DBC = CAR.create_dbc_map()
 
 # Default diagnostic session
