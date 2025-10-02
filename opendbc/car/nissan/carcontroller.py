@@ -20,7 +20,6 @@ class CarController(CarControllerBase):
   def update(self, CC, CC_SP, CS, now_nanos):
     actuators = CC.actuators
     hud_control = CC.hudControl
-    pcm_cancel_cmd = CC.cruiseControl.cancel
 
     can_sends = []
 
@@ -44,16 +43,18 @@ class CarController(CarControllerBase):
           # Start scaling torque at STEER_THRESHOLD
           CarControllerParams.LKAS_MAX_TORQUE - 0.6 * max(0, abs(CS.out.steeringTorque) - CarControllerParams.STEER_THRESHOLD)
         )
-
-    if self.CP.carFingerprint in (CAR.NISSAN_ROGUE, CAR.NISSAN_XTRAIL, CAR.NISSAN_ALTIMA) and pcm_cancel_cmd:
-      can_sends.append(nissancan.create_button_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, Buttons.CANCEL))
-
-    # TODO: Find better way to cancel!
-    # For some reason spamming the cancel button is unreliable on the Leaf
-    # We now cancel by making propilot think the seatbelt is unlatched,
-    # this generates a beep and a warning message every time you disengage
-    if self.CP.carFingerprint in (CAR.NISSAN_LEAF, CAR.NISSAN_LEAF_IC) and self.frame % 2 == 0:
-      can_sends.append(nissancan.create_cancel_msg(self.packer, CS.cancel_msg, pcm_cancel_cmd))
+    if CC.cruiseControl.cancel:
+      if self.CP.carFingerprint in (CAR.NISSAN_ROGUE, CAR.NISSAN_XTRAIL, CAR.NISSAN_ALTIMA):
+        can_sends.append(nissancan.create_button_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, Buttons.CANCEL))
+      # TODO: Find better way to cancel!
+      # For some reason spamming the cancel button is unreliable on the Leaf
+      # We now cancel by making propilot think the seatbelt is unlatched,
+      # this generates a beep and a warning message every time you disengage
+      elif self.CP.carFingerprint in (CAR.NISSAN_LEAF, CAR.NISSAN_LEAF_IC) and self.frame % 2 == 0:
+        can_sends.append(nissancan.create_cancel_msg(self.packer, CS.cancel_msg, CC.cruiseControl.cancel))
+    else:
+      if CC.cruiseControl.resume:
+        can_sends.append(nissancan.create_button_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg, Buttons.RESUME))
 
     can_sends.append(nissancan.create_steering_control(
       self.packer, self.apply_angle_last, self.frame, CC.latActive, lkas_max_torque))
