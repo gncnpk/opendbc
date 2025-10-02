@@ -1,25 +1,17 @@
 from opendbc.can import CANPacker
 from opendbc.car import Bus, structs
-from opendbc.car.lateral import apply_steer_angle_limits_vm
+from opendbc.car.lateral import apply_std_steer_angle_limits
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.nissan import nissancan
 from opendbc.car.nissan.values import CAR, CarControllerParams
-from opendbc.car.vehicle_model import VehicleModel
 
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
-
-
-def get_safety_model():
-  # Using Nissan XTrail Vehicle Model For Angle Safety
-  from opendbc.car.volkswagen.interface import CarInterface
-  return CarInterface.get_non_essential_params("NISSAN_XTRAIL")
 
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_names, CP, CP_SP):
     super().__init__(dbc_names, CP, CP_SP)
     self.car_fingerprint = CP.carFingerprint
-    self.VM = VehicleModel(get_safety_model())
 
     self.apply_angle_last = 0
 
@@ -36,8 +28,8 @@ class CarController(CarControllerBase):
     steer_hud_alert = 1 if hud_control.visualAlert in (VisualAlert.steerRequired, VisualAlert.ldw) else 0
 
     # windup slower
-    self.apply_angle_last = apply_steer_angle_limits_vm(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
-                                                         CS.out.steeringAngleDeg, CC.latActive, CarControllerParams, self.VM)
+    self.apply_angle_last = apply_std_steer_angle_limits(actuators.steeringAngleDeg, self.apply_angle_last, CS.out.vEgoRaw,
+                                                         CS.out.steeringAngleDeg, CC.latActive, CarControllerParams.ANGLE_LIMITS)
 
     lkas_max_torque = 0
     if CC.latActive:

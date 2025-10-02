@@ -80,15 +80,16 @@ static void nissan_rx_hook(const CANPacket_t *msg) {
 
 static bool nissan_tx_hook(const CANPacket_t *msg) {
   const AngleSteeringLimits NISSAN_STEERING_LIMITS = {
-    .max_angle = 41000,  // 410 deg, reasonable limit
+    .max_angle = 60000,  // 600 deg, reasonable limit
     .angle_deg_to_can = 100,
-    .frequency = 100U,
-  };
-
-  const AngleSteeringParams NISSAN_STEERING_PARAMS = {
-    .slip_factor = -0.000620067422,  // calc_slip_factor(VM) - use X-Trail model
-    .steer_ratio = 17,
-    .wheelbase = 2.705,
+    .angle_rate_up_lookup = {
+      {0., 5., 15.},
+      {5., .8, .15}
+    },
+    .angle_rate_down_lookup = {
+      {0., 5., 15.},
+      {5., 3.5, .4}
+    },
   };
 
   bool tx = true;
@@ -102,7 +103,7 @@ static bool nissan_tx_hook(const CANPacket_t *msg) {
     // Factor is -0.01, offset is 1310. Flip to correct sign, but keep units in CAN scale
     desired_angle = -desired_angle + (1310.0f * NISSAN_STEERING_LIMITS.angle_deg_to_can);
 
-    if (steer_angle_cmd_checks_vm(desired_angle, lka_active, NISSAN_STEERING_LIMITS, NISSAN_STEERING_PARAMS)) {
+    if (steer_angle_cmd_checks(desired_angle, lka_active, NISSAN_STEERING_LIMITS)) {
       violation = true;
     }
   }
