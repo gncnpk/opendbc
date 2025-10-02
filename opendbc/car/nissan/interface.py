@@ -35,4 +35,7 @@ class CarInterface(CarInterfaceBase):
     if candidate in (CAR.NISSAN_LEAF, CAR.NISSAN_LEAF_IC):
       ret.safetyParam |= NissanSafetyFlagsSP.LEAF
 
+    # Enable ICBM for all Nissan vehicles
+    ret.intelligentCruiseButtonManagementAvailable = True
+
     return ret

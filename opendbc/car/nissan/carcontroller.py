@@ -5,15 +5,19 @@ from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.nissan import nissancan
 from opendbc.car.nissan.values import CAR, CarControllerParams, Buttons
 
+from opendbc.sunnypilot.car.nissan.icbm import IntelligentCruiseButtonManagementInterface
+
 VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
 
-class CarController(CarControllerBase):
+class CarController(CarControllerBase, IntelligentCruiseButtonManagementInterface):
   def __init__(self, dbc_names, CP, CP_SP):
-    super().__init__(dbc_names, CP, CP_SP)
+    CarControllerBase.__init__(self, dbc_names, CP, CP_SP)
+    IntelligentCruiseButtonManagementInterface.__init__(self, CP, CP_SP)
     self.car_fingerprint = CP.carFingerprint
 
     self.apply_angle_last = 0
+    self.last_button_frame = 0
 
     self.packer = CANPacker(dbc_names[Bus.pt])
 
@@ -69,6 +73,11 @@ class CarController(CarControllerBase):
         can_sends.append(nissancan.create_lkas_hud_info_msg(
           self.packer, CS.lkas_hud_info_msg, steer_hud_alert
         ))
+
+    # Intelligent Cruise Button Management
+    # Store cruise throttle message for ICBM to access
+    self.cruise_throttle_msg = CS.cruise_throttle_msg
+    can_sends.extend(IntelligentCruiseButtonManagementInterface.update(self, CC_SP, self.packer, self.frame, self.last_button_frame))
 
     new_actuators = actuators.as_builder()
     new_actuators.steeringAngleDeg = self.apply_angle_last
